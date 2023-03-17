@@ -4,7 +4,7 @@
 #include <tuple>
 #include <vector>
 
-enum Type { AUTO, FOOD, TRAVEL, CLOTHER, PRISON, BANK };
+enum class Type { AUTO, FOOD, TRAVEL, CLOTHER, PRISON, BANK };
 
 class Player;
 
@@ -15,15 +15,13 @@ private:
   Player *owner;
 
 public:
-  Field(std::string name, Type type, Player *owner)
+  Field(const std::string &name, Type type, Player *owner = nullptr)
       : name(name), type(type), owner(owner) {}
-  std::string &getName() { return name; }
-  void setName(const std::string &newName) { name = newName; }
-  Type getType() { return type; }
-  void setType(Type newType) { type = newType; }
-  Player *getOwner() { return owner; }
+  const std::string &getName() const { return name; }
+  Type getType() const { return type; }
+  Player *getOwner() const { return owner; }
   void updateOwner(Player *newOwner) { owner = newOwner; }
-  bool operator==(Field &field) {
+  bool operator==(const Field &field) const {
     return name == field.name && type == field.type && owner == field.owner;
   }
 };
@@ -35,11 +33,10 @@ private:
 
 public:
   Player(std::string name, int val) : name(name), savings(val) {}
-  std::string &getName() { return name; }
-  void setName(const std::string &newName) { name = newName; }
-  int getSavings() { return savings; }
-  void updateSavings(int newVal) { savings = newVal; }
-  bool operator==(Player &player) {
+  const std::string &getName() const { return name; }
+  int getSavings() const { return savings; }
+  void updateSavings(int amount) { savings += amount; }
+  bool operator==(const Player &player) const {
     return name == player.name && savings == player.savings;
   }
 };
@@ -55,10 +52,10 @@ private:
 public:
   Monopoly(std::string names[], int);
   ~Monopoly();
-  const std::vector<Player *> &GetPlayersList();
-  const std::vector<Field *> &GetFieldsList();
-  Player *GetPlayerInfo(int);
-  Field *GetFieldByName(const std::string &);
+  const std::vector<Player *> &GetPlayersList() const;
+  const std::vector<Field *> &GetFieldsList() const;
+  Player *GetPlayerInfo(int) const;
+  Field *GetFieldByName(const std::string &) const;
   bool Buy(int playerIndex, Field *);
   bool Renta(int playerIndex, Field *);
 };

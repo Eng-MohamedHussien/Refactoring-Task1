@@ -5,13 +5,13 @@ using namespace ::std;
 
 const int Monopoly::PLAYER_SAVINGS = 6000;
 const int Monopoly::NUMBER_OF_FIELDS = 7;
-enum RentFees {
+enum class RentFees {
   PRISON_RENT_FEES = 1000,
   BANK_RENT_FEES = 700,
   OTHERS_RENT_FEES = 250
 };
 
-enum SellFees {
+enum class SellFees {
   AUTO_SELL_FEES = 500,
   FOOD_SELL_FEES = 250,
   TRAVEL_SELL_FEES = 700,
@@ -20,71 +20,78 @@ enum SellFees {
 
 Monopoly::Monopoly(std::string names[], int countPlayers)
     : NUMBER_OF_PLAYERS(countPlayers) {
-  Players.reserve(countPlayers);
+  Players.reserve(NUMBER_OF_PLAYERS);
   for (int i = 0; i < NUMBER_OF_PLAYERS; i++) {
     Players.emplace_back(new Player(names[i], PLAYER_SAVINGS));
   }
   Fields.reserve(NUMBER_OF_FIELDS);
-  Fields.emplace_back(new Field("Ford", AUTO, Players[0]));
-  Fields.emplace_back(new Field("MCDonald", FOOD, Players[0]));
-  Fields.emplace_back(new Field("Lamoda", CLOTHER, Players[0]));
-  Fields.emplace_back(new Field("Air Baltic", TRAVEL, Players[0]));
-  Fields.emplace_back(new Field("Nordavia", TRAVEL, Players[0]));
-  Fields.emplace_back(new Field("Prison", PRISON, Players[0]));
-  Fields.emplace_back(new Field("TESLA", AUTO, Players[0]));
+  Fields.emplace_back(new Field("Ford", Type::AUTO));
+  Fields.emplace_back(new Field("MCDonald", Type::FOOD));
+  Fields.emplace_back(new Field("Lamoda", Type::CLOTHER));
+  Fields.emplace_back(new Field("Air Baltic", Type::TRAVEL));
+  Fields.emplace_back(new Field("Nordavia", Type::TRAVEL));
+  Fields.emplace_back(new Field("Prison", Type::PRISON));
+  Fields.emplace_back(new Field("TESLA", Type::AUTO));
 }
 
-const std::vector<Player *> &Monopoly::GetPlayersList() { return Players; }
+const std::vector<Player *> &Monopoly::GetPlayersList() const {
+  return Players;
+}
 
-const std::vector<Field *> &Monopoly::GetFieldsList() { return Fields; }
+const std::vector<Field *> &Monopoly::GetFieldsList() const { return Fields; }
 
-Player *Monopoly::GetPlayerInfo(int m) {
-  if (m >= NUMBER_OF_PLAYERS || m < 0)
+Player *Monopoly::GetPlayerInfo(int m) const {
+  if (m >= NUMBER_OF_PLAYERS || m < 0) {
     throw "Invalid index !!!";
-  else
-    return Players[m];
+  }
+
+  return Players[m];
 }
 
-Field *Monopoly::GetFieldByName(const std::string &l) {
+Field *Monopoly::GetFieldByName(const std::string &l) const {
   auto it = std::find_if(Fields.begin(), Fields.end(),
                          [&](auto &field) { return field->getName() == l; });
-  if (it != Fields.end()) {
-    return *it;
-  } else
+  if (it == Fields.end()) {
     throw "Invalid field name !!!";
+  }
+
+  return *it;
 }
 
 bool Monopoly::Buy(int playerIndex, Field *f) {
   auto p = GetPlayerInfo(playerIndex);
+  if (f->getOwner() == p) {
+    return false;
+  }
   switch (f->getType()) {
-  case AUTO:
-    if (f->getOwner() == p)
-      return false;
-    p->updateSavings(p->getSavings() - AUTO_SELL_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() + AUTO_SELL_FEES);
+  case Type::AUTO:
+    p->updateSavings(-static_cast<int>(SellFees::AUTO_SELL_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(static_cast<int>(SellFees::AUTO_SELL_FEES));
+    }
     f->updateOwner(p);
     break;
-  case FOOD:
-    if (f->getOwner() == p)
-      return false;
-    p->updateSavings(p->getSavings() - FOOD_SELL_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() + FOOD_SELL_FEES);
+  case Type::FOOD:
+    p->updateSavings(-static_cast<int>(SellFees::FOOD_SELL_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(static_cast<int>(SellFees::FOOD_SELL_FEES));
+    }
     f->updateOwner(p);
     break;
-  case TRAVEL:
-    if (f->getOwner() == p)
-      return false;
-    p->updateSavings(p->getSavings() - TRAVEL_SELL_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() +
-                                 TRAVEL_SELL_FEES);
+  case Type::TRAVEL:
+    p->updateSavings(-static_cast<int>(SellFees::TRAVEL_SELL_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(
+          static_cast<int>(SellFees::TRAVEL_SELL_FEES));
+    }
     f->updateOwner(p);
     break;
-  case CLOTHER:
-    if (f->getOwner() == p)
-      return false;
-    p->updateSavings(p->getSavings() - CLOTHER_SELL_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() +
-                                 CLOTHER_SELL_FEES);
+  case Type::CLOTHER:
+    p->updateSavings(-static_cast<int>(SellFees::CLOTHER_SELL_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(
+          static_cast<int>(SellFees::CLOTHER_SELL_FEES));
+    }
     f->updateOwner(p);
     break;
   default:
@@ -95,25 +102,32 @@ bool Monopoly::Buy(int playerIndex, Field *f) {
 
 bool Monopoly::Renta(int playerIndex, Field *f) {
   auto p = GetPlayerInfo(playerIndex);
+  if (f->getOwner() == p) {
+    return false;
+  }
   switch (f->getType()) {
-  case AUTO:
-  case FOOD:
-  case TRAVEL:
-  case CLOTHER:
-    if (f->getOwner() == p)
-      return false;
-    p->updateSavings(p->getSavings() - OTHERS_RENT_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() +
-                                 OTHERS_RENT_FEES);
+  case Type::AUTO:
+  case Type::FOOD:
+  case Type::TRAVEL:
+  case Type::CLOTHER:
+    p->updateSavings(-static_cast<int>(RentFees::OTHERS_RENT_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(
+          static_cast<int>(RentFees::OTHERS_RENT_FEES));
+    }
     break;
-  case PRISON:
-    p->updateSavings(p->getSavings() - PRISON_RENT_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() +
-                                 PRISON_RENT_FEES);
+  case Type::PRISON:
+    p->updateSavings(-static_cast<int>(RentFees::PRISON_RENT_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(
+          static_cast<int>(RentFees::PRISON_RENT_FEES));
+    }
     break;
-  case BANK:
-    p->updateSavings(p->getSavings() - BANK_RENT_FEES);
-    f->getOwner()->updateSavings(f->getOwner()->getSavings() + BANK_RENT_FEES);
+  case Type::BANK:
+    p->updateSavings(-static_cast<int>(RentFees::BANK_RENT_FEES));
+    if (f->getOwner() != nullptr) {
+      f->getOwner()->updateSavings(static_cast<int>(RentFees::BANK_RENT_FEES));
+    }
     break;
   default:
     return false;
